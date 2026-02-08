@@ -133,8 +133,46 @@ def find_language_field_names(sample_record):
     return candidates
 
 
+def download_full_csv(api_base, filepath, where_clause=None):
+    """Download entire dataset as CSV via the bulk export endpoint (no row limit).
+
+    The /exports/csv endpoint returns the complete dataset in one request,
+    unlike the /records endpoint which is paginated and row-limited.
+    """
+    url = f"{api_base}/catalog/datasets/{DATASET_ID}/exports/csv"
+    params = {
+        "delimiter": ",",
+        "use_labels": "true",
+    }
+    if where_clause:
+        params["where"] = where_clause
+
+    print(f"  Downloading from: {url}")
+    if where_clause:
+        print(f"  Filter: {where_clause}")
+
+    resp = requests.get(url, params=params, timeout=300, stream=True)
+    resp.raise_for_status()
+
+    # Stream to file
+    total_bytes = 0
+    with open(filepath, "wb") as f:
+        for chunk in resp.iter_content(chunk_size=8192):
+            f.write(chunk)
+            total_bytes += len(chunk)
+            print(f"  Downloaded {total_bytes / 1024:.0f} KB...", end="\r")
+
+    print(f"\n  Saved {total_bytes / 1024:.1f} KB to {filepath}")
+
+    # Read back as DataFrame
+    df = pd.read_csv(filepath)
+    print(f"  {len(df)} records, {len(df.columns)} columns")
+    print(f"  Columns: {list(df.columns)}")
+    return df
+
+
 def fetch_all_records(api_base, where_clause=None, select_fields=None):
-    """Fetch all matching records with pagination."""
+    """Fetch all matching records via paginated JSON API (fallback)."""
     url = f"{api_base}/catalog/datasets/{DATASET_ID}/records"
     all_records = []
     offset = 0
@@ -274,170 +312,6 @@ def try_field_names(api_base, source_lang="Latin", target_lang="English"):
         pass
 
     return None, 0
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Download UNESCO Index Translationum data for Latin→English translations"
-    )
-    parser.add_argument(
-        "--schema", action="store_true",
-        help="Show dataset schema and exit"
-    )
-    parser.add_argument(
-        "--source-lang", default="Latin",
-        help="Source (original) language (default: Latin)"
-    )
-    parser.add_argument(
-        "--target-lang", default="English",
-        help="Target language (default: English)"
-    )
-    parser.add_argument(
-        "--output-dir", default="data/unesco",
-        help="Output directory (default: data/unesco)"
-    )
-    parser.add_argument(
-        "--discover", action="store_true",
-        help="Auto-discover field names from sample records"
-    )
-    parser.add_argument(
-        "--download-all", action="store_true",
-        help="Download entire dataset (no language filter)"
-    )
-    parser.add_argument(
-        "--src-field", default=None,
-        help="Override source language field name"
-    )
-    parser.add_argument(
-        "--tgt-field", default=None,
-        help="Override target language field name"
-    )
-    args = parser.parse_args()
-
-    print("UNESCO Index Translationum - Translation Dataset Downloader")
-    print("=" * 60)
-
-    api_base = get_api_base()
-
-    # Schema mode
-    if args.schema:
-        fetch_schema(api_base)
-        print()
-        discover_language_fields(api_base)
-        return
-
-    # Discovery mode
-    if args.discover:
-        print("\nDiscovering dataset structure...")
-        fields = fetch_schema(api_base)
-        print()
-        sample = discover_language_fields(api_base)
-        if sample:
-            find_language_field_names(sample)
-        print("\nTrying field name combinations...")
-        try_field_names(api_base, args.source_lang, args.target_lang)
-        return
-
-    # Create output directory
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    if args.download_all:
-        # Download entire dataset
-        print("\nDownloading entire dataset...")
-        records = fetch_all_records(api_base)
-        if records:
-            filepath = output_dir / "unesco_tran001_full.csv"
-            df = export_csv(records, filepath)
-
-            # Filter locally for Latin → English
-            print(f"\nSearching for {args.source_lang} → {args.target_lang} in downloaded data...")
-            # Try to find language columns
-            lang_cols = [c for c in df.columns if any(
-                term in c.lower() for term in ["lang", "language", "original", "target"]
-            )]
-            print(f"Potential language columns: {lang_cols}")
-
-            for col in df.columns:
-                vals = df[col].dropna().unique()
-                str_vals = [str(v).lower() for v in vals[:50]]
-                if "latin" in str_vals or "lat" in str_vals:
-                    print(f"  Column '{col}' contains 'latin' values!")
-                if "english" in str_vals or "eng" in str_vals:
-                    print(f"  Column '{col}' contains 'english' values!")
-        return
-
-    # Try to find the right field names
-    print(f"\nSearching for {args.source_lang} → {args.target_lang} translations...")
-
-    if args.src_field and args.tgt_field:
-        lang_fields = (args.src_field, args.tgt_field)
-        total = None
-    else:
-        print("Auto-detecting language field names...")
-        lang_fields, total = try_field_names(api_base, args.source_lang, args.target_lang)
-
-    if not lang_fields:
-        print("\nCould not auto-detect field names.")
-        print("Try running with --schema or --discover to inspect the dataset,")
-        print("or use --download-all to download everything and filter locally.")
-        print("\nAlternatively, specify fields manually:")
-        print("  --src-field original_language --tgt-field target_language")
-        return
-
-    # Build query and fetch
-    where = build_where_clause(
-        args.source_lang, args.target_lang,
-        lang_fields=lang_fields,
-    )
-    print(f"\nQuery: {where}")
-    print("Fetching records...")
-
-    records = fetch_all_records(api_base, where_clause=where)
-
-    if not records:
-        print("No records found. Try --discover to inspect the dataset.")
-        return
-
-    # Export full results
-    slug_src = args.source_lang.lower()
-    slug_tgt = args.target_lang.lower()
-    filepath = output_dir / f"unesco_{slug_src}_to_{slug_tgt}_translations.csv"
-    df = export_csv(records, filepath)
-
-    # Group by year and summarize
-    print("\n" + "=" * 60)
-    print(f"Books translated from {args.source_lang} to {args.target_lang} by year:")
-    print("-" * 60)
-
-    # Find the year column
-    year_col = None
-    for col in df.columns:
-        if "year" in col.lower() or "date" in col.lower() or "time" in col.lower():
-            year_col = col
-            break
-
-    if year_col:
-        # Extract year if it's a date field
-        if df[year_col].dtype == "object":
-            df["_year"] = pd.to_datetime(df[year_col], errors="coerce").dt.year
-            df["_year"] = df["_year"].fillna(df[year_col])
-        else:
-            df["_year"] = df[year_col]
-
-        yearly = df.groupby("_year").size().sort_index()
-        for year, count in yearly.items():
-            print(f"  {year}: {count} books")
-
-        print(f"\nTotal: {yearly.sum()} books across {len(yearly)} years")
-
-        # Export yearly summary
-        summary_path = output_dir / f"unesco_{slug_src}_to_{slug_tgt}_by_year.csv"
-        yearly.to_frame("count").to_csv(summary_path)
-        print(f"Yearly summary saved to {summary_path}")
-    else:
-        print("Could not find a year/date column to group by.")
-        print(f"Available columns: {list(df.columns)}")
 
 
 def deduplicate_records(df):
@@ -848,63 +722,75 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if args.download_all:
-        # Download entire dataset
-        print("\nDownloading entire dataset...")
-        records = fetch_all_records(api_base)
-        if records:
-            filepath = output_dir / "unesco_tran001_full.csv"
+        # Download entire dataset via bulk CSV export (no row limit)
+        filepath = output_dir / "unesco_tran001_full.csv"
+        print("\nDownloading entire dataset via bulk CSV export...")
+        print("  (The /exports/csv endpoint has no row limit, unlike /records)")
+        try:
+            df = download_full_csv(api_base, filepath)
+        except requests.RequestException as e:
+            print(f"\n  Bulk CSV export failed: {e}")
+            print("  Falling back to paginated JSON API...")
+            records = fetch_all_records(api_base)
+            if not records:
+                print("No records returned from either method.")
+                return
             df = export_csv(records, filepath)
 
-            # Filter locally for Latin → English
-            print(f"\nSearching for {args.source_lang} → {args.target_lang} in downloaded data...")
-            # Try to find language columns
-            lang_cols = [c for c in df.columns if any(
-                term in c.lower() for term in ["lang", "language", "original", "target"]
-            )]
-            print(f"Potential language columns: {lang_cols}")
+        if df is None or len(df) == 0:
+            print("No data downloaded.")
+            return
 
-            for col in df.columns:
-                vals = df[col].dropna().unique()
-                str_vals = [str(v).lower() for v in vals[:50]]
-                if "latin" in str_vals or "lat" in str_vals:
-                    print(f"  Column '{col}' contains 'latin' values!")
-                if "english" in str_vals or "eng" in str_vals:
-                    print(f"  Column '{col}' contains 'english' values!")
+        # Filter locally for Latin → English
+        print(f"\nSearching for {args.source_lang} → {args.target_lang} in downloaded data...")
+        lang_cols = [c for c in df.columns if any(
+            term in c.lower() for term in ["lang", "language", "original", "target"]
+        )]
+        print(f"Potential language columns: {lang_cols}")
 
-            # Attempt local filtering
-            src_col = None
-            tgt_col = None
-            for col in df.columns:
-                vals = df[col].dropna().astype(str).str.lower().unique()
-                if any("latin" in v for v in vals):
-                    if src_col is None:
-                        src_col = col
-                if any("english" in v for v in vals):
-                    if tgt_col is None:
-                        tgt_col = col
+        for col in df.columns:
+            vals = df[col].dropna().astype(str).str.lower().unique()
+            has_latin = any("latin" in v for v in vals)
+            has_english = any("english" in v for v in vals)
+            if has_latin:
+                print(f"  Column '{col}' contains 'latin' values!")
+            if has_english:
+                print(f"  Column '{col}' contains 'english' values!")
 
-            if src_col and tgt_col:
-                mask = (
-                    df[src_col].str.lower().str.contains("latin", na=False)
-                    & df[tgt_col].str.lower().str.contains("english", na=False)
-                )
-                filtered = df[mask]
-                slug_src = args.source_lang.lower()
-                slug_tgt = args.target_lang.lower()
-                filtered_path = output_dir / f"unesco_{slug_src}_to_{slug_tgt}_translations.csv"
-                filtered.to_csv(filtered_path, index=False)
-                print(f"\nFiltered {len(filtered)} Latin→English records → {filtered_path}")
+        # Attempt local filtering
+        src_col = None
+        tgt_col = None
+        for col in df.columns:
+            vals = df[col].dropna().astype(str).str.lower().unique()
+            if any("latin" in v for v in vals):
+                if src_col is None:
+                    src_col = col
+            if any("english" in v for v in vals):
+                if tgt_col is None:
+                    tgt_col = col
 
-                if not args.no_dedup:
-                    filtered, duplicates = deduplicate_records(filtered)
-                    if len(duplicates) > 0:
-                        dup_path = output_dir / f"unesco_{slug_src}_to_{slug_tgt}_duplicates.csv"
-                        duplicates.to_csv(dup_path, index=False)
+        if src_col and tgt_col:
+            mask = (
+                df[src_col].astype(str).str.lower().str.contains("latin", na=False)
+                & df[tgt_col].astype(str).str.lower().str.contains("english", na=False)
+            )
+            filtered = df[mask]
+            slug_src = args.source_lang.lower()
+            slug_tgt = args.target_lang.lower()
+            filtered_path = output_dir / f"unesco_{slug_src}_to_{slug_tgt}_translations.csv"
+            filtered.to_csv(filtered_path, index=False)
+            print(f"\nFiltered {len(filtered)} Latin→English records → {filtered_path}")
 
-                analyze_patterns(filtered, output_dir=str(output_dir))
-            else:
-                print("\nCould not auto-detect language columns for local filtering.")
-                print("Inspect the full CSV and re-run with --analyze.")
+            if not args.no_dedup:
+                filtered, duplicates = deduplicate_records(filtered)
+                if len(duplicates) > 0:
+                    dup_path = output_dir / f"unesco_{slug_src}_to_{slug_tgt}_duplicates.csv"
+                    duplicates.to_csv(dup_path, index=False)
+
+            analyze_patterns(filtered, output_dir=str(output_dir))
+        else:
+            print("\nCould not auto-detect language columns for local filtering.")
+            print("Inspect the full CSV and re-run with --analyze.")
         return
 
     # Try to find the right field names
@@ -931,19 +817,27 @@ def main():
         lang_fields=lang_fields,
     )
     print(f"\nQuery: {where}")
-    print("Fetching records...")
 
-    records = fetch_all_records(api_base, where_clause=where)
-
-    if not records:
-        print("No records found. Try --discover to inspect the dataset.")
-        return
-
-    # Export full results
     slug_src = args.source_lang.lower()
     slug_tgt = args.target_lang.lower()
     filepath = output_dir / f"unesco_{slug_src}_to_{slug_tgt}_translations.csv"
-    df = export_csv(records, filepath)
+
+    # Try bulk CSV export first (no row limit), fall back to paginated JSON
+    print("Downloading via bulk CSV export...")
+    try:
+        df = download_full_csv(api_base, filepath, where_clause=where)
+    except requests.RequestException as e:
+        print(f"  Bulk export failed: {e}")
+        print("  Falling back to paginated JSON API...")
+        records = fetch_all_records(api_base, where_clause=where)
+        if not records:
+            print("No records found. Try --discover to inspect the dataset.")
+            return
+        df = export_csv(records, filepath)
+
+    if df is None or len(df) == 0:
+        print("No records found. Try --discover to inspect the dataset.")
+        return
 
     # Deduplicate
     if not args.no_dedup:
