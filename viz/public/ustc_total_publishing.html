@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Total Publishing Over Time - USTC 1450-1700</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            padding: 40px;
+            min-height: 100vh;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+        .subtitle {
+            color: #888;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        .stats {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: 600;
+            color: #a78bfa;
+        }
+        .source {
+            font-size: 12px;
+            color: #666;
+            margin-top: 40px;
+        }
+        .source a { color: #a78bfa; }
+
+        /* Toggle Button */
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .toggle-btn {
+            background: rgba(167, 139, 250, 0.1);
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            color: #a78bfa;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .toggle-btn:hover {
+            background: rgba(167, 139, 250, 0.2);
+        }
+        .toggle-btn.active {
+            background: #a78bfa;
+            color: #1a1a2e;
+            border-color: #a78bfa;
+        }
+
+        /* Chart View */
+        .chart-view {
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            position: relative;
+            height: 500px;
+        }
+
+        /* Timeline View */
+        .timeline-view {
+            display: none;
+        }
+        .timeline-view.active {
+            display: block;
+        }
+        .chart-view.hidden {
+            display: none;
+        }
+
+        .timeline-header {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 10px;
+            position: sticky;
+            top: 0;
+            background: #1a1a2e;
+            z-index: 10;
+        }
+        .timeline-header .col-year { width: 50px; font-size: 11px; color: #666; }
+        .timeline-header .col-bar { width: 300px; font-size: 11px; color: #666; text-align: right; padding-right: 10px; }
+        .timeline-header .col-events { flex: 1; font-size: 11px; color: #666; padding-left: 20px; }
+
+        .year-row {
+            display: flex;
+            align-items: center;
+            min-height: 22px;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+        }
+        .year-row:hover {
+            background: rgba(167, 139, 250, 0.05);
+        }
+        .year-row.decade-start {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 5px;
+            padding-top: 5px;
+        }
+        .col-year {
+            width: 50px;
+            font-size: 12px;
+            color: #666;
+            font-variant-numeric: tabular-nums;
+        }
+        .col-year.decade-year {
+            color: #a78bfa;
+            font-weight: 600;
+        }
+        .col-bar {
+            width: 300px;
+            padding-right: 10px;
+        }
+        .bar {
+            height: 16px;
+            background: linear-gradient(90deg, #7c3aed, #a78bfa);
+            border-radius: 2px;
+            float: right;
+            position: relative;
+        }
+        .bar-label {
+            position: absolute;
+            left: -45px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: #888;
+            width: 40px;
+            text-align: right;
+        }
+        .col-events {
+            flex: 1;
+            padding-left: 20px;
+            border-left: 2px solid rgba(167, 139, 250, 0.2);
+        }
+        .event {
+            font-size: 12px;
+            color: #999;
+            padding: 2px 0;
+        }
+        .event.major {
+            color: #fff;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <h1>Total Publishing Over Time</h1>
+    <p class="subtitle">Annual output of all printed works 1450-1700 (USTC)</p>
+
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-label">Total Editions</div>
+            <div class="stat-value" id="totalStat">-</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Peak Year</div>
+            <div class="stat-value" id="peakYear">-</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Peak Output</div>
+            <div class="stat-value" id="peakOutput">-</div>
+        </div>
+    </div>
+
+    <div class="view-toggle">
+        <button class="toggle-btn active" id="chartBtn" onclick="showChart()">Line Chart</button>
+        <button class="toggle-btn" id="timelineBtn" onclick="showTimeline()">Historical Timeline</button>
+    </div>
+
+    <div class="chart-view" id="chartView">
+        <div class="chart-container">
+            <canvas id="publishingChart"></canvas>
+        </div>
+    </div>
+
+    <div class="timeline-view" id="timelineView">
+        <div class="timeline-header">
+            <div class="col-year">YEAR</div>
+            <div class="col-bar">EDITIONS &rarr;</div>
+            <div class="col-events">HISTORICAL CONTEXT</div>
+        </div>
+        <div id="timeline"></div>
+    </div>
+
+    <p class="source">
+        Source: Universal Short Title Catalogue (USTC Editions July 2025.accdb), University of St Andrews.
+        <a href="https://ustc.ac.uk">ustc.ac.uk</a>
+    </p>
+
+    <script>
+        const yearData = {"1450": 1, "1453": 2, "1454": 6, "1455": 18, "1456": 12, "1457": 4, "1458": 4, "1459": 5, "1460": 4, "1461": 19, "1462": 19, "1463": 6, "1464": 3, "1465": 205, "1466": 19, "1467": 34, "1468": 23, "1469": 57, "1470": 212, "1471": 278, "1472": 403, "1473": 445, "1474": 507, "1475": 774, "1476": 547, "1477": 634, "1478": 653, "1479": 562, "1480": 973, "1481": 815, "1482": 828, "1483": 900, "1484": 705, "1485": 1087, "1486": 868, "1487": 944, "1488": 1207, "1489": 1024, "1490": 1636, "1491": 1094, "1492": 1370, "1493": 1320, "1494": 1263, "1495": 1941, "1496": 1263, "1497": 1407, "1498": 1437, "1499": 1460, "1500": 3030, "1501": 1533, "1502": 1268, "1503": 1297, "1504": 1118, "1505": 1849, "1506": 1351, "1507": 1395, "1508": 1505, "1509": 1523, "1510": 2225, "1511": 1481, "1512": 1797, "1513": 1712, "1514": 1728, "1515": 2409, "1516": 1812, "1517": 1704, "1518": 2076, "1519": 2133, "1520": 3268, "1521": 2567, "1522": 2364, "1523": 2585, "1524": 2631, "1525": 2776, "1526": 2295, "1527": 1957, "1528": 2014, "1529": 2318, "1530": 3140, "1531": 2193, "1532": 2013, "1533": 2014, "1534": 2209, "1535": 2661, "1536": 2396, "1537": 2329, "1538": 2690, "1539": 2709, "1540": 3440, "1541": 2501, "1542": 2991, "1543": 3079, "1544": 2871, "1545": 3299, "1546": 3279, "1547": 2645, "1548": 2946, "1549": 2921, "1550": 4559, "1551": 3293, "1552": 3122, "1553": 3194, "1554": 3395, "1555": 3945, "1556": 3718, "1557": 3348, "1558": 3683, "1559": 3504, "1560": 4910, "1561": 4238, "1562": 4317, "1563": 4082, "1564": 4112, "1565": 4288, "1566": 4297, "1567": 4222, "1568": 4091, "1569": 3722, "1570": 4400, "1571": 3871, "1572": 4149, "1573": 3933, "1574": 4083, "1575": 4356, "1576": 3961, "1577": 4030, "1578": 4525, "1579": 4414, "1580": 5320, "1581": 4563, "1582": 4731, "1583": 4873, "1584": 4914, "1585": 5472, "1586": 5641, "1587": 5822, "1588": 6635, "1589": 6500, "1590": 6151, "1591": 5171, "1592": 5208, "1593": 5603, "1594": 5934, "1595": 6166, "1596": 6312, "1597": 6147, "1598": 6487, "1599": 6315, "1600": 7484, "1601": 7729, "1602": 6451, "1603": 6544, "1604": 6416, "1605": 6269, "1606": 6941, "1607": 6823, "1608": 7295, "1609": 7891, "1610": 8703, "1611": 7413, "1612": 8075, "1613": 7495, "1614": 8136, "1615": 8963, "1616": 8352, "1617": 9031, "1618": 9378, "1619": 9994, "1620": 11768, "1621": 10640, "1622": 10389, "1623": 9131, "1624": 8776, "1625": 9606, "1626": 8462, "1627": 8022, "1628": 8688, "1629": 8752, "1630": 9633, "1631": 9176, "1632": 8627, "1633": 8588, "1634": 8583, "1635": 8811, "1636": 8381, "1637": 8034, "1638": 8384, "1639": 7876, "1640": 9367, "1641": 10383, "1642": 12706, "1643": 11769, "1644": 11626, "1645": 11493, "1646": 11343, "1647": 11888, "1648": 13549, "1649": 13040, "1650": 14463, "1651": 12077, "1652": 12690, "1653": 12373, "1654": 11166, "1655": 11619, "1656": 11268, "1657": 11488, "1658": 12368, "1659": 13281, "1660": 15333, "1661": 13215, "1662": 12049, "1663": 12974, "1664": 13402, "1665": 14580, "1666": 13965, "1667": 13666, "1668": 14568, "1669": 14276, "1670": 14699, "1671": 14041, "1672": 15293, "1673": 15161, "1674": 14986, "1675": 15913, "1676": 14766, "1677": 15166, "1678": 14383, "1679": 14943, "1680": 19334, "1681": 15030, "1682": 14933, "1683": 15973, "1684": 16816, "1685": 17107, "1686": 15724, "1687": 15489, "1688": 17517, "1689": 17896, "1690": 18729, "1691": 16745, "1692": 16771, "1693": 17397, "1694": 15684, "1695": 17449, "1696": 17699, "1697": 18360, "1698": 17992, "1699": 18852, "1700": 16566};
+
+        const events = {
+            1453: "Fall of Constantinople",
+            1455: { text: "Gutenberg Bible printed", major: true },
+            1465: "First Italian press (Subiaco)",
+            1469: "First press in Venice",
+            1470: { text: "Printing spreads across Europe", major: true },
+            1476: "Caxton's press in England",
+            1485: "Tudor dynasty begins",
+            1486: "Pico's 900 Theses",
+            1492: { text: "Columbus reaches Americas", major: true },
+            1494: "Italian Wars begin",
+            1498: "Savonarola burned",
+            1500: { text: "Jubilee year — religious printing surge", major: true },
+            1501: "Aldine pocket classics",
+            1509: "Erasmus: Praise of Folly",
+            1516: "Erasmus Greek NT; More's Utopia",
+            1517: { text: "Luther's 95 Theses", major: true },
+            1520: { text: "Reformation pamphlet explosion", major: true },
+            1521: "Diet of Worms",
+            1525: "German Peasants' War",
+            1534: "English Reformation; Luther's Bible",
+            1536: "Calvin's Institutes",
+            1540: "Jesuits founded",
+            1543: { text: "Copernicus & Vesalius published", major: true },
+            1545: "Council of Trent begins",
+            1555: "Peace of Augsburg",
+            1557: "Index of Forbidden Books",
+            1558: "Elizabeth I ascends",
+            1562: { text: "French Wars of Religion begin", major: true },
+            1563: "Council of Trent ends",
+            1572: { text: "St. Bartholomew's Day Massacre", major: true },
+            1576: "Sack of Antwerp",
+            1584: "William of Orange assassinated",
+            1588: { text: "Spanish Armada defeated", major: true },
+            1598: "Edict of Nantes",
+            1600: { text: "Bruno burned; East India Co.", major: true },
+            1609: { text: "Kepler's laws; Galileo's telescope", major: true },
+            1611: "King James Bible",
+            1618: { text: "Thirty Years' War begins", major: true },
+            1620: "Battle of White Mountain",
+            1632: "Galileo's Dialogue",
+            1633: "Galileo condemned",
+            1637: "Descartes's Discourse",
+            1640: "Long Parliament",
+            1642: { text: "English Civil War begins", major: true },
+            1648: { text: "Peace of Westphalia", major: true },
+            1649: "Charles I executed",
+            1651: "Hobbes's Leviathan",
+            1660: { text: "Restoration; Royal Society", major: true },
+            1665: "Great Plague of London",
+            1666: "Great Fire of London",
+            1672: "Franco-Dutch War",
+            1675: "Leibniz's calculus",
+            1677: "Spinoza's Ethics",
+            1680: { text: "Exclusion Crisis pamphlets", major: true },
+            1685: { text: "Revocation of Edict of Nantes", major: true },
+            1687: { text: "Newton's Principia", major: true },
+            1688: "Glorious Revolution",
+            1690: "Locke's Two Treatises",
+            1695: { text: "Licensing Act lapses — press freedom", major: true }
+        };
+
+        const years = [];
+        for (let y = 1450; y <= 1700; y++) years.push(y);
+
+        const values = years.map(y => yearData[y] || 0);
+        const maxVal = Math.max(...values);
+        const total = values.reduce((a, b) => a + b, 0);
+        const peakYear = years[values.indexOf(maxVal)];
+
+        document.getElementById('totalStat').textContent = total.toLocaleString();
+        document.getElementById('peakYear').textContent = peakYear;
+        document.getElementById('peakOutput').textContent = maxVal.toLocaleString();
+
+        // Create horizontal line chart
+        const ctx = document.getElementById('publishingChart').getContext('2d');
+
+        // Prepare annotations for major events
+        const majorEventYears = Object.keys(events)
+            .filter(y => events[y].major)
+            .map(y => parseInt(y));
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: years,
+                datasets: [{
+                    label: 'Editions per Year',
+                    data: values,
+                    borderColor: '#a78bfa',
+                    backgroundColor: 'rgba(167, 139, 250, 0.1)',
+                    fill: true,
+                    tension: 0.2,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(26, 26, 46, 0.95)',
+                        titleColor: '#fff',
+                        bodyColor: '#a78bfa',
+                        borderColor: 'rgba(167, 139, 250, 0.3)',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            title: (items) => {
+                                const year = items[0].label;
+                                const evt = events[year];
+                                if (evt) {
+                                    const text = typeof evt === 'string' ? evt : evt.text;
+                                    return `${year} — ${text}`;
+                                }
+                                return year;
+                            },
+                            label: (item) => `${item.raw.toLocaleString()} editions`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(255,255,255,0.05)'
+                        },
+                        ticks: {
+                            color: '#666',
+                            maxTicksLimit: 26,
+                            callback: function(value, index) {
+                                const year = this.getLabelForValue(value);
+                                return year % 10 === 0 ? year : '';
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Year',
+                            color: '#888'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(255,255,255,0.05)'
+                        },
+                        ticks: {
+                            color: '#666',
+                            callback: value => value >= 1000 ? (value/1000) + 'k' : value
+                        },
+                        title: {
+                            display: true,
+                            text: 'Editions per Year',
+                            color: '#888'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Build vertical timeline
+        const timelineEl = document.getElementById('timeline');
+        let html = '';
+
+        for (const year of years) {
+            const val = yearData[year] || 0;
+            const pct = (val / maxVal * 100).toFixed(1);
+            const isDecade = year % 10 === 0;
+            const evt = events[year];
+            const evtText = evt ? (typeof evt === 'string' ? evt : evt.text) : '';
+            const evtMajor = evt && typeof evt === 'object' && evt.major;
+
+            html += `
+                <div class="year-row ${isDecade ? 'decade-start' : ''}">
+                    <div class="col-year ${isDecade ? 'decade-year' : ''}">${year}</div>
+                    <div class="col-bar">
+                        <div class="bar" style="width: ${pct}%">
+                            ${val > 1000 ? `<span class="bar-label">${(val/1000).toFixed(1)}k</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="col-events">
+                        ${evtText ? `<span class="event ${evtMajor ? 'major' : ''}">${evtText}</span>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        timelineEl.innerHTML = html;
+
+        // Toggle functions
+        function showChart() {
+            document.getElementById('chartView').classList.remove('hidden');
+            document.getElementById('timelineView').classList.remove('active');
+            document.getElementById('chartBtn').classList.add('active');
+            document.getElementById('timelineBtn').classList.remove('active');
+        }
+
+        function showTimeline() {
+            document.getElementById('chartView').classList.add('hidden');
+            document.getElementById('timelineView').classList.add('active');
+            document.getElementById('chartBtn').classList.remove('active');
+            document.getElementById('timelineBtn').classList.add('active');
+        }
+    </script>
+</body>
+</html>

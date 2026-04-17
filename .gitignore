@@ -20,5 +20,42 @@ node_modules/
 .next/
 .vercel
 viz/uploads/
-scripts/ustc_full.csv
-scripts/enrichments_all.csv
+
+# Pipeline artifacts — enrichment complete, results in Supabase
+scripts/*.csv
+scripts/*.json
+scripts/*.py
+scripts/*.log
+scripts/*.sh
+scripts/citation_agents/
+scripts/loaders/
+scripts/TRANSLATION_LOOKUP.md
+
+# Supabase local config
+supabase/
+
+# Large standalone HTML visualizations (embedded data, served from Vercel)
+viz/public/ustc_3d.html
+viz/public/ustc_3d_animated.html
+viz/public/ustc_3d_decades.html
+viz/public/ustc_3d_era.html
+viz/public/ustc_3d_explorer.html
+viz/public/ustc_by_era.html
+viz/public/ustc_by_language.html
+viz/public/ustc_clusters.html
+viz/public/ustc_explorer.html
+viz/public/ustc_schools_of_thought.html
+
+# Large public data files
+viz/public/istc_enriched.json
+
+# One-off scripts not part of the pipeline
+scripts/*.sql
+scripts/*.ts
+
+# Unused
+viz/lib/mongodb.ts
+
+# Misc artifacts
+original_dates_estimate.json
+CLAUDE.md

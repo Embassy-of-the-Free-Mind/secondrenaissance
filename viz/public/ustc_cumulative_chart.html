@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USTC Cumulative Book Production 1450-1700</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fdfcf9;
+        }
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #1a1612;
+            margin-bottom: 5px;
+            font-family: 'Cormorant Garamond', Georgia, serif;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+            font-family: 'Newsreader', Georgia, serif;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: #f5f0e8;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #9e4a3a;
+        }
+        .stat-box h3 {
+            margin: 0 0 5px 0;
+            color: #333;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+        }
+        .stat-box .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #9e4a3a;
+            font-family: 'Cormorant Garamond', Georgia, serif;
+        }
+        .source {
+            font-size: 12px;
+            color: #888;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        .insight {
+            background: #f5f0e8;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'Newsreader', Georgia, serif;
+            line-height: 1.6;
+        }
+        .insight h3 {
+            margin-top: 0;
+            color: #9e4a3a;
+            font-family: 'Cormorant Garamond', Georgia, serif;
+        }
+    </style>
+</head>
+<body>
+    <h1>The Printing Revolution: Cumulative Book Production 1450-1700</h1>
+    <p class="subtitle">Total editions recorded in the Universal Short Title Catalogue</p>
+
+    <div class="stats">
+        <div class="stat-box">
+            <h3>Total Editions (1450-1700)</h3>
+            <div class="value" id="totalEditions">Loading...</div>
+        </div>
+        <div class="stat-box">
+            <h3>Peak Decade</h3>
+            <div class="value" id="peakDecade">Loading...</div>
+        </div>
+        <div class="stat-box">
+            <h3>Growth Factor (1450s to 1690s)</h3>
+            <div class="value" id="growthFactor">Loading...</div>
+        </div>
+        <div class="stat-box">
+            <h3>Avg. Editions per Year (1690s)</h3>
+            <div class="value" id="avgPerYear">Loading...</div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="cumulativeChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="decadeChart"></canvas>
+    </div>
+
+    <div class="insight">
+        <h3>What This Shows</h3>
+        <p>
+            From Gutenberg's first experiments in the 1450s to the close of the 17th century,
+            European printing underwent exponential growth. The curve is not linear - it accelerates
+            dramatically after 1500, with particularly strong growth during the Reformation (1520s)
+            and again during the Scientific Revolution and religious conflicts of the 17th century.
+        </p>
+        <p>
+            By 1700, over 1.6 million editions had been printed - an average of nearly 18,000 new
+            titles per year in the final decade. This represents one of the most significant
+            information revolutions in human history.
+        </p>
+    </div>
+
+    <p class="source">
+        <strong>Source:</strong> Universal Short Title Catalogue, University of St Andrews.
+        <a href="https://ustc.ac.uk" style="color: #9e4a3a;">ustc.ac.uk</a><br>
+        Data represents catalogued editions 1450-1700. Actual production was likely higher.
+    </p>
+
+    <script>
+        const data = {
+            "1450": {"Latin": 43, "German": 6, "French": 0, "English": 2, "Dutch": 0, "Italian": 1, "Spanish": 0, "Other": 0},
+            "1460": {"Latin": 348, "German": 23, "French": 2, "English": 11, "Dutch": 1, "Italian": 1, "Spanish": 0, "Other": 3},
+            "1470": {"Latin": 3972, "German": 408, "French": 181, "English": 19, "Dutch": 53, "Italian": 347, "Spanish": 16, "Other": 18},
+            "1480": {"Latin": 6315, "German": 1082, "French": 791, "English": 72, "Dutch": 237, "Italian": 508, "Spanish": 198, "Other": 148},
+            "1490": {"Latin": 8812, "German": 1433, "French": 1706, "English": 158, "Dutch": 245, "Italian": 1025, "Spanish": 559, "Other": 253},
+            "1500": {"Latin": 10629, "German": 1216, "French": 1514, "English": 198, "Dutch": 356, "Italian": 1139, "Spanish": 396, "Other": 418},
+            "1510": {"Latin": 12725, "German": 1870, "French": 1257, "English": 242, "Dutch": 386, "Italian": 1490, "Spanish": 491, "Other": 616},
+            "1520": {"Latin": 10925, "German": 8343, "French": 1659, "English": 385, "Dutch": 416, "Italian": 1492, "Spanish": 610, "Other": 943},
+            "1530": {"Latin": 11455, "German": 4976, "French": 2836, "English": 789, "Dutch": 485, "Italian": 1906, "Spanish": 642, "Other": 1260},
+            "1540": {"Latin": 13530, "German": 5201, "French": 3840, "English": 1191, "Dutch": 775, "Italian": 2671, "Spanish": 1104, "Other": 1651},
+            "1550": {"Latin": 15357, "German": 5503, "French": 5338, "English": 1477, "Dutch": 1056, "Italian": 3874, "Spanish": 1329, "Other": 1820},
+            "1560": {"Latin": 15910, "German": 6729, "French": 7747, "English": 2313, "Dutch": 1584, "Italian": 4912, "Spanish": 1084, "Other": 1995},
+            "1570": {"Latin": 16201, "German": 5848, "French": 6957, "English": 2048, "Dutch": 1616, "Italian": 5954, "Spanish": 1266, "Other": 1823},
+            "1580": {"Latin": 20902, "German": 6783, "French": 9147, "English": 2995, "Dutch": 2862, "Italian": 7737, "Spanish": 1726, "Other": 2312},
+            "1590": {"Latin": 24829, "German": 8235, "French": 7630, "English": 3294, "Dutch": 2680, "Italian": 7898, "Spanish": 2221, "Other": 2696},
+            "1600": {"Latin": 30939, "German": 9596, "French": 7254, "English": 4370, "Dutch": 3570, "Italian": 6611, "Spanish": 4245, "Other": 3254},
+            "1610": {"Latin": 34290, "German": 14802, "French": 10950, "English": 5047, "Dutch": 4970, "Italian": 6404, "Spanish": 5411, "Other": 3662},
+            "1620": {"Latin": 30862, "German": 19517, "French": 12838, "English": 5890, "Dutch": 7250, "Italian": 6992, "Spanish": 7782, "Other": 3091},
+            "1630": {"Latin": 24712, "German": 21531, "French": 11764, "English": 6767, "Dutch": 6715, "Italian": 5097, "Spanish": 6694, "Other": 2807},
+            "1640": {"Latin": 30143, "German": 20521, "French": 15068, "English": 24112, "Dutch": 10582, "Italian": 5482, "Spanish": 6456, "Other": 4794},
+            "1650": {"Latin": 34133, "German": 23852, "French": 20196, "English": 16717, "Dutch": 11402, "Italian": 6026, "Spanish": 7293, "Other": 3169},
+            "1660": {"Latin": 37292, "German": 32716, "French": 23502, "English": 13427, "Dutch": 13350, "Italian": 6971, "Spanish": 7441, "Other": 3322},
+            "1670": {"Latin": 36483, "German": 41446, "French": 23260, "English": 13833, "Dutch": 14235, "Italian": 8537, "Spanish": 7849, "Other": 3701},
+            "1680": {"Latin": 33325, "German": 45893, "French": 25305, "English": 26445, "Dutch": 13959, "Italian": 8419, "Spanish": 8527, "Other": 3935},
+            "1690": {"Latin": 33090, "German": 49233, "French": 30686, "English": 28507, "Dutch": 13613, "Italian": 8234, "Spanish": 8150, "Other": 4150}
+        };
+
+        const decades = Object.keys(data).sort((a, b) => parseInt(a) - parseInt(b));
+        const decadeLabels = decades.map(d => d + 's');
+
+        // Calculate totals per decade
+        const decadeTotals = decades.map(decade =>
+            Object.values(data[decade]).reduce((a, b) => a + b, 0)
+        );
+
+        // Calculate cumulative totals
+        let cumulative = 0;
+        const cumulativeTotals = decadeTotals.map(total => {
+            cumulative += total;
+            return cumulative;
+        });
+
+        // Update stats
+        const totalEditions = cumulativeTotals[cumulativeTotals.length - 1];
+        document.getElementById('totalEditions').textContent = totalEditions.toLocaleString();
+
+        const maxDecadeIndex = decadeTotals.indexOf(Math.max(...decadeTotals));
+        document.getElementById('peakDecade').textContent = decadeLabels[maxDecadeIndex] + ' (' + decadeTotals[maxDecadeIndex].toLocaleString() + ')';
+
+        const growthFactor = Math.round(decadeTotals[decadeTotals.length - 1] / decadeTotals[0]);
+        document.getElementById('growthFactor').textContent = growthFactor.toLocaleString() + 'x';
+
+        const avgPerYear = Math.round(decadeTotals[decadeTotals.length - 1] / 10);
+        document.getElementById('avgPerYear').textContent = avgPerYear.toLocaleString();
+
+        // Cumulative chart
+        new Chart(document.getElementById('cumulativeChart'), {
+            type: 'line',
+            data: {
+                labels: decadeLabels,
+                datasets: [{
+                    label: 'Cumulative Total Editions',
+                    data: cumulativeTotals,
+                    borderColor: '#9e4a3a',
+                    backgroundColor: 'rgba(158, 74, 58, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Cumulative Total: Books in Print 1450-1700',
+                        font: { size: 16, family: "'Cormorant Garamond', Georgia, serif" }
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ctx.raw.toLocaleString() + ' total editions'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Decade' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Cumulative Editions' },
+                        ticks: {
+                            callback: value => (value / 1000000).toFixed(1) + 'M'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Decade production chart
+        new Chart(document.getElementById('decadeChart'), {
+            type: 'bar',
+            data: {
+                labels: decadeLabels,
+                datasets: [{
+                    label: 'Editions per Decade',
+                    data: decadeTotals,
+                    backgroundColor: '#9e4a3a',
+                    borderColor: '#7a3a2e',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'New Editions per Decade',
+                        font: { size: 16, family: "'Cormorant Garamond', Georgia, serif" }
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ctx.raw.toLocaleString() + ' editions'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Decade' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Number of Editions' },
+                        ticks: {
+                            callback: value => value.toLocaleString()
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
