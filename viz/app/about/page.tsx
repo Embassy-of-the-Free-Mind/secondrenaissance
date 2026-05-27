@@ -26,7 +26,7 @@ export default function AboutPage() {
             ← SECOND RENAISSANCE
           </Link>
           <a
-            href="https://www.ancientwisdomtrust.org/become-a-patron"
+            href="https://donate.stripe.com/9B67sLbO1bOg2GxfxP9fW08"
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -326,8 +326,8 @@ export default function AboutPage() {
             color: '#444',
             marginBottom: '20px',
           }}>
-            The <a href="https://www.ancientwisdomtrust.org/become-a-patron" target="_blank" rel="noopener noreferrer" style={{ color: '#9e4a3a' }}>Ancient Wisdom Trust</a> is
-            the fundraising arm of our translation initiative. Your contributions directly fund:
+            <a href="https://sourcelibrary.org" target="_blank" rel="noopener noreferrer" style={{ color: '#9e4a3a' }}>Source Library</a> is
+            our translation and open-access program, operated by the Embassy of the Free Mind in Amsterdam (Stichting Het Wereldhart, ANBI). Your contributions directly fund:
           </p>
           <ul style={{
             fontFamily: 'Newsreader, Georgia, serif',
@@ -435,12 +435,12 @@ export default function AboutPage() {
             maxWidth: '480px',
             margin: '0 auto 32px',
           }}>
-            The Ancient Wisdom Trust funds cataloging, digitization, and translation
-            of essential texts. Every contribution helps unlock more of the hidden
-            libraries.
+            Source Library, an initiative of the Embassy of the Free Mind, funds
+            cataloging, digitization, and translation of essential texts. Every
+            contribution helps unlock more of the hidden libraries.
           </p>
           <a
-            href="https://www.ancientwisdomtrust.org/become-a-patron"
+            href="https://donate.stripe.com/9B67sLbO1bOg2GxfxP9fW08"
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -455,7 +455,7 @@ export default function AboutPage() {
               textDecoration: 'none',
             }}
           >
-            Donate to Ancient Wisdom Trust
+            Donate via EFM
           </a>
         </section>
 

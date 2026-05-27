@@ -359,7 +359,7 @@ export default function DigitizationGap() {
               The Renaissance is waiting. Let&apos;s find it.
             </p>
             <a
-              href="https://www.ancientwisdomtrust.org/become-a-patron"
+              href="https://donate.stripe.com/9B67sLbO1bOg2GxfxP9fW08"
               target="_blank"
               rel="noopener noreferrer"
               style={{

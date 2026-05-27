@@ -66,7 +66,7 @@ export default function BlogLayout({ children, title, tag, slug, date = "Decembe
             ← RESEARCH ESSAYS
           </Link>
           <a
-            href="https://www.ancientwisdomtrust.org/become-a-patron"
+            href="https://donate.stripe.com/9B67sLbO1bOg2GxfxP9fW08"
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -301,7 +301,7 @@ export default function BlogLayout({ children, title, tag, slug, date = "Decembe
           fontSize: '12px',
           color: '#888',
         }}>
-          Translations at <a href="https://sourcelibrary.org" style={{ color: '#666' }}>Source Library</a> · Support our work at <a href="https://www.ancientwisdomtrust.org/become-a-patron" style={{ color: '#666' }}>Ancient Wisdom Trust</a>
+          Translations at <a href="https://sourcelibrary.org" style={{ color: '#666' }}>Source Library</a> · <a href="https://donate.stripe.com/9B67sLbO1bOg2GxfxP9fW08" style={{ color: '#666' }}>Support our work</a>
         </p>
       </footer>
     </main>

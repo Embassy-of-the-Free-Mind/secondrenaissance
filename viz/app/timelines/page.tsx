@@ -18,7 +18,7 @@ export default function Timelines() {
             &larr; ANCIENT WISDOM RESEARCH
           </Link>
           <a
-            href="https://www.ancientwisdomtrust.org/become-a-patron"
+            href="https://donate.stripe.com/9B67sLbO1bOg2GxfxP9fW08"
             target="_blank"
             rel="noopener noreferrer"
             style={{

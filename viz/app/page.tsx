@@ -1092,7 +1092,7 @@ export default function Home() {
             marginBottom: '24px',
           }}>
             The original Renaissance was sparked by rediscovering ancient texts.
-            Half a million more are waiting. The <a href="https://www.ancientwisdomtrust.org/become-a-patron" target="_blank" rel="noopener noreferrer" style={{ color: '#c9a86c' }}>Ancient Wisdom Trust</a> is working to
+            Half a million more are waiting. <a href="https://sourcelibrary.org" target="_blank" rel="noopener noreferrer" style={{ color: '#c9a86c' }}>Source Library</a>, an initiative of the Embassy of the Free Mind in Amsterdam, is working to
             unlock them—through cataloging, digitization, and translation.
           </p>
           <p style={{
@@ -1112,7 +1112,7 @@ export default function Home() {
             marginBottom: '48px',
           }}>
             <a
-              href="https://www.ancientwisdomtrust.org/become-a-patron"
+              href="https://donate.stripe.com/9B67sLbO1bOg2GxfxP9fW08"
               target="_blank"
               rel="noopener noreferrer"
               style={{

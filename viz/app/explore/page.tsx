@@ -98,7 +98,7 @@ export default function Home() {
             <a href="/timelines" style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Timelines</a>
             <a href="/blog/roadmap" style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Roadmap</a>
             <a
-              href="https://www.ancientwisdomtrust.org/become-a-patron"
+              href="https://donate.stripe.com/9B67sLbO1bOg2GxfxP9fW08"
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -470,7 +470,7 @@ export default function Home() {
             </p>
             <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
               <a
-                href="https://www.ancientwisdomtrust.org/become-a-patron"
+                href="https://donate.stripe.com/9B67sLbO1bOg2GxfxP9fW08"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{

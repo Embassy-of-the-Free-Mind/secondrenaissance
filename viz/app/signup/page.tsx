@@ -60,6 +60,24 @@ function SignupForm() {
             </p>
           </div>
 
+          <div className="mt-8 border border-[#e8e4dc] bg-[#fdfcf9] rounded-lg px-6 py-5 text-left">
+            <p className="text-sm text-[#1a1612] font-serif mb-2">
+              While you wait — help translate the Renaissance
+            </p>
+            <p className="text-xs text-[#5c5c5c] leading-relaxed mb-3">
+              Source Library is an initiative of the Embassy of the Free Mind (ANBI). Translations
+              are published openly. Donations fund scholar-reviewed translation, scanning, and hosting.
+            </p>
+            <a
+              href="https://donate.stripe.com/9B67sLbO1bOg2GxfxP9fW08"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-xs font-medium text-[#9e4a3a] hover:underline"
+            >
+              Support the project →
+            </a>
+          </div>
+
           <p className="mt-6 text-sm text-[#5c5c5c]">
             <Link href="/login" className="text-[#9e4a3a] hover:underline">
               Back to sign in

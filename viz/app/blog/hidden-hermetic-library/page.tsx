@@ -450,7 +450,7 @@ export default function HiddenHermeticLibrary() {
               The hidden libraries are coming into view. Help us map them.
             </p>
             <a
-              href="https://www.ancientwisdomtrust.org/become-a-patron"
+              href="https://donate.stripe.com/9B67sLbO1bOg2GxfxP9fW08"
               target="_blank"
               rel="noopener noreferrer"
               style={{
