@@ -1,0 +1,12 @@
+data/
+scripts/
+notebooks/
+db/
+docs/
+config/
+supabase/
+*.csv
+*.json
+!viz/**
+!vercel.json
+!.vercel/**
